@@ -2,23 +2,15 @@
 ╔══════════════════════════════════════════════════════╗
 ║        CULINÁRIA HORMONAL - Gerador Automático       ║
 ║  Gera receita → imagens → layout → vídeo completo   ║
+║  + Upload automático para YouTube                    ║
 ╚══════════════════════════════════════════════════════╝
-
-Dependências (instale antes de rodar):
-    pip install pillow moviepy google-generativeai requests
-
-APIs necessárias (configure no arquivo .env):
-    GEMINI_API_KEY=AIza...   ← UMA SÓ CHAVE para tudo!
-
-Custo estimado:
-    Texto  (Gemini 2.0 Flash): GRÁTIS no free tier
-    Imagens (Imagen 3 Fast):   ~$0.015/imagem → $0.03/vídeo
-    5 vídeos/dia × 30 dias  =  ~$4.50/mês 💚
 """
 
 import os
 import json
 import random
+import subprocess
+import sys
 from pathlib import Path
 from datetime import datetime
 
@@ -38,20 +30,15 @@ load_env()
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
-# Modelo de imagem:
-#   "imagen-3.0-fast-generate-001" → mais barato (~$0.015/img) ✅ recomendado
-#   "imagen-3.0-generate-002"      → máxima qualidade (~$0.030/img)
 IMAGEN_MODEL = "imagen-4.0-fast-generate-001"
 
-# Pastas do projeto
 BASE_DIR      = Path(__file__).parent
-ASSETS_DIR    = BASE_DIR / "assets"       # coloque logo.png aqui
-BG_VIDEOS_DIR = BASE_DIR / "bg_videos"   # vídeos de fundo .mp4
-MUSIC_DIR     = BASE_DIR / "music"       # músicas .mp3 / .m4a
+ASSETS_DIR    = BASE_DIR / "assets"
+BG_VIDEOS_DIR = BASE_DIR / "bg_videos"
+MUSIC_DIR     = BASE_DIR / "music"
 OUTPUT_DIR    = BASE_DIR / "output"
 HISTORY_FILE  = BASE_DIR / "historico_receitas.json"
 
-# Canvas formato vertical (Shorts)
 CANVAS_W = 1080
 CANVAS_H = 1920
 
@@ -63,14 +50,12 @@ import io
 # ─── HISTÓRICO ────────────────────────────────────────────────────────────────
 
 def carregar_historico() -> list:
-    """Carrega títulos já publicados para evitar repetição."""
     if HISTORY_FILE.exists():
         data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
         return data.get("titulos", [])
     return []
 
 def salvar_historico(titulo: str):
-    """Adiciona título ao histórico (mantém últimos 200)."""
     historico = carregar_historico()
     historico.append(titulo)
     historico = historico[-200:]
@@ -79,14 +64,9 @@ def salvar_historico(titulo: str):
         encoding="utf-8"
     )
 
-# ─── GERAÇÃO DE RECEITA (GEMINI 2.0 FLASH - GRÁTIS) ──────────────────────────
+# ─── GERAÇÃO DE RECEITA ───────────────────────────────────────────────────────
 
 def gerar_receita(historico: list) -> dict:
-    """
-    Usa Gemini 2.0 Flash para gerar receita nova no estilo do canal.
-    Retorna dict com: titulo, descricao_card, descricao_youtube,
-                      prompt_ingredientes, prompt_prato_pronto
-    """
     from google import genai
     client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -124,28 +104,15 @@ A receita pode ser lanches rápidos, cafés, sobremesa, almoço, janta, etc...
   poder, segredo, espanta, energia, memória, sono, cansaço,
   diferente, revolucionou, troquei, que poucos conhecem
 
-- Exemplos reais do canal (referência de estilo):
-
-  "Poucos sabem o poder desse patê"
-  "Leite condensado (sem leite)"
-  "Café da manhã diferente"
-  "O mousse que faz pegar no sono"
-  "Para espantar o cansaço"
-  "Esse molho revolucionou minha salada"
-  "Troquei o pão por isso e minha energia melhorou"
-  "O peixe com tomate cereja que se faz sozinho no forno"
-
 - NÃO usar títulos longos ou explicativos demais
 - Priorizar curiosidade + benefício
-
 
 ═══ REGRAS DA DESCRIÇÃO DO CARD (aparece no vídeo) ═══
 
 - 4–5 frases curtas
 - Primeira frase: conectar com um problema comum
-  (cansaço, sono ruim, fome fora de hora, falta de energia)
-- Segunda e terceira frases: Explicar a receita de forma simples e rápida, passe os ingredientes e o modo de preparo corretamente de maneira sucinta.
-- Quarta frase: mencionar benefícios naturais do alimento, exemplo: (energia, saciedade, relaxamento, foco, digestão)
+- Segunda e terceira frases: ingredientes e modo de preparo de forma sucinta
+- Quarta frase: mencionar benefícios naturais do alimento
 - Linguagem simples e natural (parecendo dica de amiga)
 - O fim da descrição deve ser EXATAMENTE: "(LEIA A DESCRIÇÃO)"
 
@@ -181,13 +148,9 @@ Responda SOMENTE em JSON válido, sem markdown, sem texto extra:
             text = text[4:]
     return json.loads(text.strip())
 
-# ─── GERAÇÃO DE IMAGENS (IMAGEN 3 FAST - ~$0.015/img) ────────────────────────
+# ─── GERAÇÃO DE IMAGENS ───────────────────────────────────────────────────────
 
 def gerar_imagens(prompt_ingredientes: str, prompt_prato: str):
-    """
-    Gera as 2 imagens usando Imagen 3 Fast via Gemini API.
-    Mesma chave do texto — sem OpenAI.
-    """
     from google import genai
     from google.genai import types
     client = genai.Client(api_key=GEMINI_API_KEY)
@@ -214,10 +177,9 @@ def gerar_imagens(prompt_ingredientes: str, prompt_prato: str):
 
     return img1, img2
 
-# ─── MONTAGEM DO LAYOUT (PILLOW) ──────────────────────────────────────────────
+# ─── MONTAGEM DO LAYOUT ───────────────────────────────────────────────────────
 
 def arredondar_cantos(img: Image.Image, radius: int) -> Image.Image:
-    """Aplica cantos arredondados com máscara alpha."""
     mask = Image.new("L", img.size, 0)
     draw = ImageDraw.Draw(mask)
     draw.rounded_rectangle([(0, 0), img.size], radius=radius, fill=255)
@@ -226,7 +188,6 @@ def arredondar_cantos(img: Image.Image, radius: int) -> Image.Image:
     return result
 
 def quebrar_texto(draw: ImageDraw.Draw, texto: str, fonte, max_w: int) -> list:
-    """Quebra texto em linhas respeitando largura máxima."""
     linhas = []
     for paragrafo in texto.split("\n"):
         if not paragrafo.strip():
@@ -249,17 +210,9 @@ def quebrar_texto(draw: ImageDraw.Draw, texto: str, fonte, max_w: int) -> list:
 
 
 def montar_layout(receita: dict, img_ingredientes: Image.Image, img_prato: Image.Image) -> Image.Image:
-    """
-    Monta frame 1080x1920:
-      - Título com fundo BRANCO logo acima das imagens
-      - 2 imagens lado a lado com cantos arredondados
-      - Logo redondo centralizado na BORDA INFERIOR das imagens
-      - Caixa branca com descrição embaixo
-    """
     canvas = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
     draw = ImageDraw.Draw(canvas)
 
-    # ── Fontes com suporte a acentos (Arial do Windows) ───────────────────
     def carregar_fonte_win(bold: bool, tamanho: int):
         nomes = ["arialbd.ttf", "Arial_Bold.ttf"] if bold else ["arial.ttf", "Arial.ttf"]
         fallbacks = ["DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"]
@@ -280,25 +233,23 @@ def montar_layout(receita: dict, img_ingredientes: Image.Image, img_prato: Image
     CORNER_R = 28
     DESC_PAD = 40
 
-    # ── Medidas exatas ────────────────────────────────────────────────────
-    TITULO_Y     = 180                  # 180px do topo
-    titulo_max_w = CANVAS_W - 110 * 2  # margem 110px cada lado
+    TITULO_Y     = 180
+    titulo_max_w = CANVAS_W - 110 * 2
     titulo_lh    = int(52 * 1.18)
 
-    IMGS_Y = 380                        # imagens a 380px do topo
-    IMGS_W = CANVAS_W                   # largura total 1080px
-    IMGS_H = IMGS_W // 2               # quadrado
+    IMGS_Y = 380
+    IMGS_W = CANVAS_W
+    IMGS_H = IMGS_W // 2
 
-    LOGO_Y = 800                        # logo a 800px do topo
+    LOGO_Y    = 800
     logo_size = 115
 
-    DESC_X = 40                         # 40px da esquerda
-    DESC_W = 830                        # largura máxima 830px
-    DESC_Y = IMGS_Y + IMGS_H + 20      # 20px abaixo das imagens
+    DESC_X = 40
+    DESC_W = 830
+    DESC_Y = IMGS_Y + IMGS_H + 20
 
     linhas_titulo = quebrar_texto(draw, receita["titulo"].upper(), fonte_titulo, titulo_max_w)
 
-    # ── Título com fundo BRANCO negrito ──────────────────────────────────
     for i, linha in enumerate(linhas_titulo):
         bb = draw.textbbox((0, 0), linha, font=fonte_titulo)
         lw, lh = bb[2] - bb[0], bb[3] - bb[1]
@@ -316,7 +267,6 @@ def montar_layout(receita: dict, img_ingredientes: Image.Image, img_prato: Image
         draw = ImageDraw.Draw(canvas)
         draw.text((tx, ty), linha, font=fonte_titulo, fill=(15, 15, 15, 255))
 
-    # ── Imagens lado a lado — largura total 1080px ────────────────────────
     img_w = IMGS_W // 2
     img_h = IMGS_H
 
@@ -328,7 +278,6 @@ def montar_layout(receita: dict, img_ingredientes: Image.Image, img_prato: Image
     canvas.paste(img1_rd, (0, IMGS_Y), img1_rd)
     canvas.paste(img2_rd, (img_w, IMGS_Y), img2_rd)
 
-    # ── Caixa branca com descrição ────────────────────────────────────────
     linhas_desc = quebrar_texto(draw, receita["descricao_card"], fonte_desc,
                                 DESC_W - DESC_PAD * 2)
     desc_lh    = int(42 * 1.35)
@@ -348,7 +297,6 @@ def montar_layout(receita: dict, img_ingredientes: Image.Image, img_prato: Image
         draw.text((DESC_X + DESC_PAD, ty), linha,
                   font=fonte_desc, fill=(15, 15, 15, 255))
 
-    # ── Logo redondo a 800px do topo — desenhado POR ÚLTIMO (frente de tudo) ──
     logo_path = ASSETS_DIR / "logo.png"
     if logo_path.exists():
         logo_raw = Image.open(logo_path).convert("RGBA").resize((logo_size, logo_size), Image.LANCZOS)
@@ -366,10 +314,26 @@ def montar_layout(receita: dict, img_ingredientes: Image.Image, img_prato: Image
     return canvas
 
 
+# ─── DURAÇÃO DO ÁUDIO (FFprobe) ───────────────────────────────────────────────
+
+def obter_duracao_audio(caminho: Path) -> float:
+    """Retorna duração em segundos do arquivo de áudio usando ffprobe."""
+    cmd = [
+        "ffprobe", "-v", "error",
+        "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        str(caminho)
+    ]
+    resultado = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        return float(resultado.stdout.strip())
+    except ValueError:
+        return 97.0  # fallback: 1:37 min
+
+
 # ─── MONTAGEM DO VÍDEO (FFMPEG) ───────────────────────────────────────────────
 
 def verificar_ffmpeg():
-    """Verifica se FFmpeg está instalado."""
     import shutil
     if shutil.which("ffmpeg") is None:
         raise RuntimeError(
@@ -379,9 +343,9 @@ def verificar_ffmpeg():
         )
 
 def montar_video(frame_png: Path, titulo: str) -> Path:
-    """Combina vídeo de fundo (loop 6s) + frame PNG + música → .mp4 via FFmpeg."""
-    import subprocess
-
+    """
+    Combina vídeo de fundo (loop 6s) + frame PNG + trecho ALEATÓRIO de 6s do áudio → .mp4
+    """
     verificar_ffmpeg()
 
     DURACAO = 6
@@ -402,8 +366,17 @@ def montar_video(frame_png: Path, titulo: str) -> Path:
 
     bg_path     = random.choice(videos_bg)
     musica_path = random.choice(musicas)
+
+    # ── TRECHO ALEATÓRIO DO ÁUDIO ─────────────────────────────────────────
+    duracao_audio = obter_duracao_audio(musica_path)
+    # Garante que o trecho de 6s cabe dentro da música (com 1s de margem no fim)
+    max_inicio = max(0.0, duracao_audio - DURACAO - 1.0)
+    inicio_audio = round(random.uniform(0.0, max_inicio), 2)
+
     print(f"  🎬 Fundo  : {bg_path.name}")
     print(f"  🎵 Música : {musica_path.name}")
+    print(f"  ⏱️  Trecho : {inicio_audio:.1f}s → {inicio_audio + DURACAO:.1f}s "
+          f"(de {duracao_audio:.1f}s totais)")
 
     nome = (titulo[:40].replace(" ", "_")
                        .replace("/", "-")
@@ -411,16 +384,12 @@ def montar_video(frame_png: Path, titulo: str) -> Path:
             + "_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".mp4")
     saida = OUTPUT_DIR / nome
 
-    # Monta o comando FFmpeg:
-    # - Loop no vídeo de fundo até 6s
-    # - Sobrepõe o frame PNG em cima (ocupa todo o canvas)
-    # - Adiciona música com volume 40% e fade out no último segundo
-    # - Escala tudo para 1080x1920
+    # -ss antes de -i no áudio = seek rápido (sem redecodificar tudo)
     cmd = [
         "ffmpeg", "-y",
-        "-stream_loop", "-1", "-i", str(bg_path),       # vídeo de fundo em loop
-        "-loop", "1", "-i", str(frame_png),              # frame PNG estático
-        "-stream_loop", "-1", "-i", str(musica_path),    # música em loop
+        "-stream_loop", "-1", "-i", str(bg_path),
+        "-loop", "1",          "-i", str(frame_png),
+        "-ss", str(inicio_audio), "-stream_loop", "-1", "-i", str(musica_path),
         "-filter_complex",
         (
             f"[0:v]scale={CANVAS_W}:{CANVAS_H},setsar=1[bg];"
@@ -443,10 +412,81 @@ def montar_video(frame_png: Path, titulo: str) -> Path:
 
     return saida
 
+
+# ─── UPLOAD PARA O YOUTUBE ────────────────────────────────────────────────────
+
+def upload_youtube(video_path: Path, titulo: str, descricao: str) -> str:
+    """
+    Faz upload do vídeo para o YouTube como Short (não listado por padrão).
+    Retorna o ID do vídeo publicado.
+    """
+    import google.oauth2.credentials
+    import googleapiclient.discovery
+    import googleapiclient.http
+
+    # Credenciais OAuth2 via variáveis de ambiente (Railway)
+    creds = google.oauth2.credentials.Credentials(
+        token=None,
+        refresh_token=os.environ.get("YOUTUBE_REFRESH_TOKEN", ""),
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=os.environ.get("YOUTUBE_CLIENT_ID", ""),
+        client_secret=os.environ.get("YOUTUBE_CLIENT_SECRET", ""),
+    )
+
+    youtube = googleapiclient.discovery.build(
+        "youtube", "v3",
+        credentials=creds,
+        cache_discovery=False
+    )
+
+    body = {
+        "snippet": {
+            "title": titulo,
+            "description": descricao,
+            "tags": [
+                "culinária hormonal", "receitas saudáveis", "saúde feminina",
+                "menopausa", "hormônios", "emagrecer", "shorts", "receitasaudavel"
+            ],
+            "categoryId": "26",   # Howto & Style
+            "defaultLanguage": "pt",
+        },
+        "status": {
+            "privacyStatus": "public",
+            "selfDeclaredMadeForKids": False,
+        }
+    }
+
+    media = googleapiclient.http.MediaFileUpload(
+        str(video_path),
+        mimetype="video/mp4",
+        resumable=True,
+        chunksize=4 * 1024 * 1024
+    )
+
+    request = youtube.videos().insert(
+        part="snippet,status",
+        body=body,
+        media_body=media
+    )
+
+    print("  📤 Enviando para YouTube...", end="", flush=True)
+    response = None
+    while response is None:
+        status, response = request.next_chunk()
+        if status:
+            pct = int(status.progress() * 100)
+            print(f"\r  📤 Upload: {pct}%", end="", flush=True)
+
+    print(f"\r  📤 Upload: 100% ✅")
+    video_id = response.get("id", "")
+    print(f"  🔗 https://youtube.com/shorts/{video_id}")
+    return video_id
+
+
 # ─── PIPELINE PRINCIPAL ───────────────────────────────────────────────────────
 
-def gerar_video_completo() -> Path:
-    """Pipeline completo: receita → imagens → layout → vídeo."""
+def gerar_e_postar() -> dict:
+    """Pipeline completo: receita → imagens → layout → vídeo → YouTube."""
 
     print("\n" + "═"*54)
     print("  🌿 CULINÁRIA HORMONAL — Gerador Automático")
@@ -459,14 +499,14 @@ def gerar_video_completo() -> Path:
         raise ValueError("GEMINI_API_KEY não encontrada. Configure o arquivo .env")
 
     # 1. Receita
-    print("\n📝 [1/4] Gerando receita (Gemini Flash — grátis)...")
+    print("\n📝 [1/5] Gerando receita...")
     historico = carregar_historico()
     print(f"         Histórico: {len(historico)} receitas já publicadas")
     receita = gerar_receita(historico)
     print(f"         ✅ {receita['titulo']}")
 
     # 2. Imagens
-    print("\n🖼️  [2/4] Gerando imagens (Imagen 3 Fast — ~$0.03)...")
+    print("\n🖼️  [2/5] Gerando imagens...")
     img_ingredientes, img_prato = gerar_imagens(
         receita["prompt_ingredientes"],
         receita["prompt_prato_pronto"]
@@ -474,54 +514,61 @@ def gerar_video_completo() -> Path:
     print("         ✅ Imagens geradas")
 
     # 3. Layout
-    print("\n🎨 [3/4] Montando layout...")
+    print("\n🎨 [3/5] Montando layout...")
     frame = montar_layout(receita, img_ingredientes, img_prato)
     frame_tmp = OUTPUT_DIR / "_frame_temp.png"
     frame.save(str(frame_tmp), "PNG")
     print("         ✅ Layout pronto")
 
     # 4. Vídeo
-    print("\n🎬 [4/4] Montando vídeo final...")
+    print("\n🎬 [4/5] Montando vídeo final...")
     video_path = montar_video(frame_tmp, receita["titulo"])
     frame_tmp.unlink(missing_ok=True)
     print(f"         ✅ {video_path.name}")
 
-    # Salva histórico + descrição YouTube
+    # 5. Upload YouTube
+    video_id = ""
+    youtube_habilitado = os.environ.get("YOUTUBE_REFRESH_TOKEN", "")
+    if youtube_habilitado:
+        print("\n📺 [5/5] Publicando no YouTube...")
+        video_id = upload_youtube(
+            video_path,
+            receita["titulo"],
+            receita["descricao_youtube"]
+        )
+    else:
+        print("\n⚠️  [5/5] YOUTUBE_REFRESH_TOKEN não configurado — pulando upload")
+
+    # Salva histórico + descrição
     salvar_historico(receita["titulo"])
     desc_path = video_path.with_suffix(".txt")
     desc_path.write_text(
         f"TÍTULO:\n{receita['titulo']}\n\n"
+        f"YOUTUBE ID: {video_id}\n\n"
         f"DESCRIÇÃO YOUTUBE:\n{receita['descricao_youtube']}",
         encoding="utf-8"
     )
 
     print("\n" + "═"*54)
     print("  ✅ CONCLUÍDO!")
-    print(f"  📁 output/{video_path.name}")
-    print(f"  📄 output/{desc_path.name}")
+    print(f"  📁 {video_path.name}")
+    if video_id:
+        print(f"  🔗 https://youtube.com/shorts/{video_id}")
     print("═"*54 + "\n")
-    return video_path
 
-# ─── MODO LOTE ────────────────────────────────────────────────────────────────
+    return {"titulo": receita["titulo"], "video_id": video_id, "path": str(video_path)}
 
-def gerar_lote(quantidade: int):
-    """Gera N vídeos em sequência."""
-    print(f"\n🚀 Modo lote: {quantidade} vídeos")
-    gerados = []
-    for i in range(quantidade):
-        print(f"\n{'─'*54}\n  Vídeo {i+1} de {quantidade}")
-        try:
-            gerados.append(gerar_video_completo())
-        except Exception as e:
-            print(f"  ❌ Erro: {e}")
-    print(f"\n🏁 Concluído: {len(gerados)}/{quantidade} vídeos gerados\n")
 
 # ─── ENTRY POINT ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import sys
     quantidade = int(sys.argv[1]) if len(sys.argv) > 1 else 1
-    if quantidade == 1:
-        gerar_video_completo()
-    else:
-        gerar_lote(quantidade)
+    for i in range(quantidade):
+        if quantidade > 1:
+            print(f"\n{'─'*54}\n  Vídeo {i+1} de {quantidade}")
+        try:
+            gerar_e_postar()
+        except Exception as e:
+            print(f"  ❌ Erro: {e}")
+            import traceback
+            traceback.print_exc()
