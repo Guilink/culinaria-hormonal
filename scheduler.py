@@ -50,10 +50,12 @@ def calcular_horarios_do_dia(data: datetime) -> list[datetime]:
     Para cada janela, sorteia um horário aleatório dentro dela
     e retorna lista ordenada de datetimes com timezone.
     """
+    # Garante que 'data' está em Brasília antes de fazer o replace
+    data_br = data.astimezone(TZ)
     horarios = []
     for h_ini, m_ini, h_fim, m_fim in JANELAS:
-        inicio = data.replace(hour=h_ini, minute=m_ini, second=0, microsecond=0)
-        fim    = data.replace(hour=h_fim, minute=m_fim, second=0, microsecond=0)
+        inicio = data_br.replace(hour=h_ini, minute=m_ini, second=0, microsecond=0)
+        fim    = data_br.replace(hour=h_fim, minute=m_fim, second=0, microsecond=0)
         # Sorteia segundo aleatório dentro da janela
         delta_segundos = int((fim - inicio).total_seconds())
         offset = random.randint(0, delta_segundos)
