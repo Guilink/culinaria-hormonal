@@ -1,0 +1,17 @@
+# Secrets
+.env
+
+# Saídas geradas (não sobe para o Git)
+output/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
