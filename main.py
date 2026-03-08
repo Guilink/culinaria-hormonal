@@ -37,7 +37,11 @@ ASSETS_DIR    = BASE_DIR / "assets"
 BG_VIDEOS_DIR = BASE_DIR / "bg_videos"
 MUSIC_DIR     = BASE_DIR / "music"
 OUTPUT_DIR    = BASE_DIR / "output"
-HISTORY_FILE  = BASE_DIR / "historico_receitas.json"
+
+# Histórico: usa volume persistente na Railway (/data) ou pasta local no PC
+_VOLUME_DIR  = Path("/data")
+_HISTORY_DIR = _VOLUME_DIR if _VOLUME_DIR.exists() else BASE_DIR
+HISTORY_FILE = _HISTORY_DIR / "historico_receitas.json"
 
 CANVAS_W = 1080
 CANVAS_H = 1920
