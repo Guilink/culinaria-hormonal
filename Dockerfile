@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copia o código
 COPY main.py .
 COPY scheduler.py .
+COPY test_now.py .
 COPY get_youtube_token.py .
 
 # Copia os assets (logo, fontes, vídeos de fundo, músicas)
@@ -27,4 +28,4 @@ COPY music/ ./music/
 RUN mkdir -p output
 
 # O scheduler roda continuamente
-CMD ["python", "test_now.py"]
+CMD ["python", "scheduler.py"]
