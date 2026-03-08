@@ -27,4 +27,4 @@ COPY music/ ./music/
 RUN mkdir -p output
 
 # O scheduler roda continuamente
-CMD ["python", "scheduler.py"]
+CMD ["python", "test_now.py"]
