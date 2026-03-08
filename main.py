@@ -42,6 +42,18 @@ HISTORY_FILE  = BASE_DIR / "historico_receitas.json"
 CANVAS_W = 1080
 CANVAS_H = 1920
 
+# ─── DESCRIÇÃO FIXA DO YOUTUBE ────────────────────────────────────────────────
+
+DESCRICAO_YOUTUBE = (
+    "Calor do nada, insônia, raiva sem motivo, choro escondido e ainda engorda mesmo "
+    "comendo pouco... Você não tá ficando louca. Seu corpo só tá em colapso, e ninguém "
+    "te explicou.\n\n"
+    "Essa receita faz parte do Reset Hormonal, um plano de 7 dias 100% natural, feito "
+    "pra quem tá cansada de fingir que tá tudo bem enquanto sofre sozinha.\n\n"
+    "👉 PARA ACESSAR: Toque no nome do canal (no video mesmo) e depois no LINK que está "
+    "no perfil. Faça esse favor para si mesma..."
+)
+
 # ─── IMPORTS ──────────────────────────────────────────────────────────────────
 
 from PIL import Image, ImageDraw, ImageFont
@@ -131,7 +143,6 @@ Responda SOMENTE em JSON válido, sem markdown, sem texto extra:
 {{
   "titulo": "...",
   "descricao_card": "...",
-  "descricao_youtube": "...",
   "prompt_ingredientes": "...",
   "prompt_prato_pronto": "..."
 }}"""
@@ -534,7 +545,7 @@ def gerar_e_postar() -> dict:
         video_id = upload_youtube(
             video_path,
             receita["titulo"],
-            receita["descricao_youtube"]
+            DESCRICAO_YOUTUBE
         )
     else:
         print("\n⚠️  [5/5] YOUTUBE_REFRESH_TOKEN não configurado — pulando upload")
@@ -545,7 +556,7 @@ def gerar_e_postar() -> dict:
     desc_path.write_text(
         f"TÍTULO:\n{receita['titulo']}\n\n"
         f"YOUTUBE ID: {video_id}\n\n"
-        f"DESCRIÇÃO YOUTUBE:\n{receita['descricao_youtube']}",
+        f"DESCRIÇÃO YOUTUBE:\n{DESCRICAO_YOUTUBE}",
         encoding="utf-8"
     )
 
