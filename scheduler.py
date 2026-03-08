@@ -28,13 +28,17 @@ load_env()
 TZ = pytz.timezone("America/Sao_Paulo")
 
 # Janelas de publicação: (hora_inicio, minuto_inicio, hora_fim, minuto_fim)
+# Janelas sugeridas para Nicho de Saúde/Culinária Hormonal
+# Foco: Momentos de decisão alimentar (Refeições e Planejamento)
+
 JANELAS = [
-    (10,  0, 10, 30),   # Vídeo 1
-    (12,  0, 12, 30),   # Vídeo 2
-    (14,  0, 14, 30),   # Vídeo 3
-    (16, 30, 17,  0),   # Vídeo 4
-    (19,  0, 19, 30),   # Vídeo 5
+    (07, 30, 08, 00),   # Vídeo 1: Despertar/Shot/Café (Início do metabolismo)
+    (11, 00, 11, 30),   # Vídeo 2: Almoço/Planejamento (Antes da fome bater)
+    (14, 30, 15, 00),   # Vídeo 3: Lanche da tarde/Controle de ansiedade/Doce saudável
+    (18, 00, 18, 30),   # Vídeo 4: Jantar/O "Horário de Ouro" do YouTube
+    (21, 00, 21, 30),   # Vídeo 5: Ceia/Chás/Higiene do sono (Foco hormonal noturno)
 ]
+
 
 logging.basicConfig(
     level=logging.INFO,
