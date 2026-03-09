@@ -32,7 +32,7 @@ TZ = pytz.timezone("America/Sao_Paulo")
 # Foco: Momentos de decisão alimentar (Refeições e Planejamento)
 
 JANELAS = [
-    (07, 30, 08, 00),   # Vídeo 1: Despertar/Shot/Café (Início do metabolismo)
+    (7, 30, 8, 00),   # Vídeo 1: Despertar/Shot/Café (Início do metabolismo)
     (11, 00, 11, 30),   # Vídeo 2: Almoço/Planejamento (Antes da fome bater)
     (14, 30, 15, 00),   # Vídeo 3: Lanche da tarde/Controle de ansiedade/Doce saudável
     (18, 00, 18, 30),   # Vídeo 4: Jantar/O "Horário de Ouro" do YouTube
