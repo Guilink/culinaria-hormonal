@@ -5,11 +5,10 @@
 ╚══════════════════════════════════════════════════════╝
 
 Horários (Brasília / America/Sao_Paulo):
-  Vídeo 1: 10:00 – 10:30  (aleatório dentro da janela)
-  Vídeo 2: 12:00 – 12:30
-  Vídeo 3: 14:00 – 14:30
-  Vídeo 4: 16:30 – 17:00
-  Vídeo 5: 19:00 – 19:30
+  Vídeo 1: 11:00 – 11:30
+  Vídeo 2: 14:30 – 15:00
+  Vídeo 3: 18:00 – 18:30
+  Vídeo 4: 21:00 – 21:30
 """
 
 import time
@@ -32,11 +31,10 @@ TZ = pytz.timezone("America/Sao_Paulo")
 # Foco: Momentos de decisão alimentar (Refeições e Planejamento)
 
 JANELAS = [
-    (7, 30, 8, 00),   # Vídeo 1: Despertar/Shot/Café (Início do metabolismo)
-    (11, 00, 11, 30),   # Vídeo 2: Almoço/Planejamento (Antes da fome bater)
-    (14, 30, 15, 00),   # Vídeo 3: Lanche da tarde/Controle de ansiedade/Doce saudável
-    (18, 00, 18, 30),   # Vídeo 4: Jantar/O "Horário de Ouro" do YouTube
-    (21, 00, 21, 30),   # Vídeo 5: Ceia/Chás/Higiene do sono (Foco hormonal noturno)
+    (11, 00, 11, 30),   # Vídeo 1: Almoço/Planejamento (Antes da fome bater)
+    (14, 30, 15, 00),   # Vídeo 2: Lanche da tarde/Controle de ansiedade/Doce saudável
+    (18, 00, 18, 30),   # Vídeo 3: Jantar/O "Horário de Ouro" do YouTube
+    (21, 00, 21, 30),   # Vídeo 4: Ceia/Chás/Higiene do sono (Foco hormonal noturno)
 ]
 
 
