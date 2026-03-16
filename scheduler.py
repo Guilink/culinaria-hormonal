@@ -32,7 +32,7 @@ TZ = pytz.timezone("America/Sao_Paulo")
 
 JANELAS = [
     (11, 00, 11, 30),   # Vídeo 1: Almoço/Planejamento (Antes da fome bater)
-    (15, 00, 15, 05),   # Vídeo 2: Lanche da tarde/Controle de ansiedade/Doce saudável
+    (15, 5, 15, 7),   # Vídeo 2: Lanche da tarde/Controle de ansiedade/Doce saudável
     (18, 00, 18, 30),   # Vídeo 3: Jantar/O "Horário de Ouro" do YouTube
     (21, 00, 21, 30),   # Vídeo 4: Ceia/Chás/Higiene do sono (Foco hormonal noturno)
 ]
