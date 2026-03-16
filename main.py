@@ -609,7 +609,7 @@ def montar_video(frame_png: Path, titulo: str) -> Path:
     """
     verificar_ffmpeg()
 
-    DURACAO = 6  # Duração do vídeo em segundos
+    DURACAO = 5  # Duração do vídeo em segundos
 
     videos_bg = list(BG_VIDEOS_DIR.glob("*.mp4"))
     if not videos_bg:
