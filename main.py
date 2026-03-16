@@ -288,11 +288,11 @@ FRASE 5 - CTA FINAL (obrigatório):
   "(Leia mais na descrição)" ou "(LEIA A DESCRIÇÃO)"
 
 REGRAS DA DESCRIÇÃO:
-✓ 4-6 frases curtas (máximo 15 palavras cada)
+✓ 4-6 frases curtas (máximo 15 palavras cada), não quebre linha entre as frases, deixe o texto corrido
 ✓ Linguagem de "dica de amiga" - informal, acolhedora
 ✓ NUNCA use jargões técnicos ou termos científicos
 ✓ Seja específica nos ingredientes e quantidades
-✓ Termine SEMPRE com "(Leia mais na descrição)"
+✓ Termine SEMPRE com "(LEIA A DESCRIÇÃO)"
 
 ═══════════════════════════════════════════════════════════════
 
