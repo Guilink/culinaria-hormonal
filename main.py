@@ -384,23 +384,39 @@ def gerar_imagens(prompt_ingredientes: str, prompt_prato: str):
     sufixo_hero = ", vibrant colors, appetizing, steam rising, mouth-watering hero shot, garnished beautifully"
 
     def gerar(prompt: str, extra: str = "") -> Image.Image:
+        # Configuração compatível com Imagen 4.0
+        # NOTA: safety_filter_level só aceita "BLOCK_LOW_AND_ABOVE" neste modelo
+        config = types.GenerateImagesConfig(
+            number_of_images=1,
+            aspect_ratio="1:1",
+            safety_filter_level="BLOCK_LOW_AND_ABOVE",  # ← CORREÇÃO: valor suportado
+            # person_generation removido: não é suportado no Imagen 4.0 fast
+        )
+        
         resultado = client.models.generate_images(
             model=IMAGEN_MODEL,
             prompt=prefixo + prompt + extra,
-            config=types.GenerateImagesConfig(
-                number_of_images=1,
-                aspect_ratio="1:1",
-                safety_filter_level="BLOCK_MEDIUM_AND_ABOVE",
-                person_generation="DONT_ALLOW"
-            )
+            config=config
         )
         img_bytes = resultado.generated_images[0].image.image_bytes
         return Image.open(io.BytesIO(img_bytes)).convert("RGB")
 
     print("  🖼️  Gerando imagem 1 (ingredientes)...")
-    img1 = gerar(prompt_ingredientes)
+    try:
+        img1 = gerar(prompt_ingredientes)
+    except Exception as e:
+        print(f"  ⚠️  Erro na imagem 1: {e}")
+        print("  🔄 Tentando com prompt simplificado...")
+        # Fallback: prompt mais genérico
+        img1 = gerar("fresh ingredients on wooden table, natural lighting, food photography")
+    
     print("  🖼️  Gerando imagem 2 (prato pronto)...")
-    img2 = gerar(prompt_prato, sufixo_hero)
+    try:
+        img2 = gerar(prompt_prato, sufixo_hero)
+    except Exception as e:
+        print(f"  ⚠️  Erro na imagem 2: {e}")
+        print("  🔄 Tentando com prompt simplificado...")
+        img2 = gerar("delicious finished dish, professional food photography, appetizing")
 
     return img1, img2
 
